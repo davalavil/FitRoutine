@@ -12,10 +12,10 @@ body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
 /* Estilos para Modales y Checklist */
 .modal { display: none; position: fixed; z-index: 50; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); }
 .modal-content { background-color: #fefefe; margin: 10% auto; padding: 20px; border: 1px solid #888; width: 80%; max-width: 600px; border-radius: 8px; }
-.modal-header { padding-bottom: 10px; border-bottom: 1px solid #e5e7eb; }
+.modal-header { padding-bottom: 10px; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center;}
 .modal-body { padding-top: 10px; padding-bottom: 10px; }
 .modal-footer { padding-top: 10px; border-top: 1px solid #e5e7eb; text-align: right; }
-.close-button { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
+.close-button { color: #aaa; font-size: 28px; font-weight: bold; cursor: pointer; line-height: 1; }
 .close-button:hover, .close-button:focus { color: black; text-decoration: none; cursor: pointer; }
 .checklist-item { display: flex; align-items: center; padding: 8px 0; border-bottom: 1px solid #eee; }
 .checklist-item input[type="checkbox"] { margin-right: 10px; }
@@ -33,10 +33,53 @@ input:checked + .slider:before { -webkit-transform: translateX(26px); -ms-transf
 .slider.round { border-radius: 34px; }
 .slider.round:before { border-radius: 50%; }
 
+/* Estilos Calendario */
+.calendar-day-cell {
+    min-height: 6rem; /* Altura mínima para celdas del calendario */
+    border-right: 1px solid #e5e7eb;
+    border-bottom: 1px solid #e5e7eb;
+    padding: 0.5rem;
+    position: relative;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+.calendar-day-cell:hover:not(.other-month) {
+    background-color: #eff6ff; /* light blue on hover */
+}
+.calendar-day-cell.other-month {
+    color: #9ca3af; /* gray for other month days */
+    background-color: #f9fafb; /* slightly different bg */
+    cursor: default;
+}
+.calendar-day-cell .day-number {
+    font-size: 0.875rem; /* text-sm */
+    font-weight: 500;
+}
+.calendar-day-cell.today .day-number {
+    background-color: #3b82f6; /* blue-500 */
+    color: white;
+    border-radius: 50%;
+    width: 1.5rem;
+    height: 1.5rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.calendar-event-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: #ef4444; /* red-500 default */
+    display: inline-block;
+    margin-left: 4px;
+}
+
+
 @media print {
-    .sidebar, .navbar, .modal, .modal-footer button, #addUserBtn, #addSportSidebarBtn, #addSportBtn, #addProgramBtn, #addExerciseBtn { display: none; }
+    /* Estilos de impresión existentes */
+    .sidebar, nav, .modal, .modal-footer button, #addUserBtnDropdown, #addSportSidebarBtn, #addSportBtn, #addProgramBtn, #addExerciseBtn, #saveDataBtn, #loadDataInput, label[for="loadDataInput"] { display: none !important; }
     .main-content { width: 100%; height: auto; overflow: visible; margin: 0; padding: 0; }
-    .tab-content { display: block !important; page-break-after: always; } /* Asegura que todas las pestañas se impriman */
+    .tab-content { display: block !important; page-break-after: always; }
     body { width: 100%; margin: 10px; }
     .modal-content { margin: 0; width: 100%; box-shadow: none; border: none; }
     .container { max-width: 100% !important; }
