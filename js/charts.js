@@ -1,63 +1,100 @@
 // js/charts.js
+console.log("charts.js loaded");
 
 // Guardar referencias a los gráficos para poder actualizarlos/destruirlos
 let charts = {};
+const defaultChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+        legend: { display: true },
+        tooltip: { enabled: true }
+    },
+    scales: {
+        y: { beginAtZero: true }
+    }
+};
 
 function initializeChart(ctx, config) {
     if (!ctx) return null;
-    // Destruir gráfico existente si lo hubiera en este canvas
     const chartId = ctx.canvas.id;
     if (charts[chartId]) {
-        charts[chartId].destroy();
+        charts[chartId].destroy(); // Destruir gráfico existente si lo hubiera
     }
-    const newChart = new Chart(ctx, config);
-    charts[chartId] = newChart;
-    return newChart;
+    try {
+        const newChart = new Chart(ctx, config);
+        charts[chartId] = newChart;
+        // Ocultar mensaje de "No hay datos" si el gráfico se inicializa
+        const msgElement = document.getElementById(`${chartId}Msg`);
+        if (msgElement) msgElement.style.display = 'none';
+        return newChart;
+    } catch (error) {
+        console.error(`Error initializing chart ${chartId}:`, error);
+         const msgElement = document.getElementById(`${chartId}Msg`);
+         if (msgElement) msgElement.style.display = 'block';
+        return null;
+    }
 }
 
-function initializeActivityChart(data) {
+// --- Funciones de Inicialización Específicas ---
+
+function initializeActivityChart(data = null) {
     const ctx = document.getElementById('activityChart')?.getContext('2d');
     const config = {
         type: 'line',
-        data: data || { // Datos por defecto o pasados como argumento
-            labels: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'],
-            datasets: [/* ... */]
-        },
-        options: { /* ... Opciones del gráfico ... */ }
+        data: data || { labels: [], datasets: [] }, // Espera datos o vacío
+        options: { ...defaultChartOptions }
     };
     initializeChart(ctx, config);
 }
 
-function initializeSportsProgressChart(data) {
-     const ctx = document.getElementById('sportsProgressChart')?.getContext('2d');
-     const config = { type: 'radar', data: data, options: { /* ... */ } };
+function initializeSportsProgressChart(data = null) {
+    const ctx = document.getElementById('sportsProgressChart')?.getContext('2d');
+    const config = {
+        type: 'radar',
+        data: data || { labels: [], datasets: [] },
+        options: { ...defaultChartOptions, scales: { r: { angleLines: { display: true }, suggestedMin: 0, suggestedMax: 100 } } }
+    };
+    initializeChart(ctx, config);
+}
+
+function initializeSpecificMetricsChart(data = null) {
+    const ctx = document.getElementById('specificMetricsChart')?.getContext('2d');
+    const config = {
+        type: 'bar',
+        data: data || { labels: [], datasets: [] },
+        options: { ...defaultChartOptions }
+    };
      initializeChart(ctx, config);
 }
 
- function initializeSpecificMetricsChart(data) {
-    const ctx = document.getElementById('specificMetricsChart')?.getContext('2d'); // Cambiado ID del HTML
-    const config = { type: 'bar', data: data, options: { /* ... */ } };
-    initializeChart(ctx, config);
-}
-
-function initializePerformanceChart(data) {
+function initializePerformanceChart(data = null) {
     const ctx = document.getElementById('performanceChart')?.getContext('2d');
-    const config = { type: 'line', data: data, options: { /* ... */ } };
-    initializeChart(ctx, config);
+    const config = {
+        type: 'line',
+        data: data || { labels: [], datasets: [] },
+        options: { ...defaultChartOptions }
+    };
+     initializeChart(ctx, config);
 }
 
-function initializeAllCharts(analyticsData) {
-    // Llamar a cada función de inicialización, pasando los datos adecuados
-    // Estos datos vendrían de api.js
-    try {
-        initializeActivityChart(analyticsData?.activity);
-        initializeSportsProgressChart(analyticsData?.sportsProgress);
-        initializeSpecificMetricsChart(analyticsData?.specificMetrics);
-        initializePerformanceChart(analyticsData?.performance);
-    } catch (error) {
-        console.error("Error initializing charts:", error);
+function initializeAllCharts(analyticsData = null) {
+    console.log("Initializing all charts...");
+    // Llama a cada función de inicialización, pasando los datos adecuados o null
+    initializeActivityChart(analyticsData?.activity);
+    initializeSportsProgressChart(analyticsData?.sportsProgress);
+    initializeSpecificMetricsChart(analyticsData?.specificMetrics);
+    initializePerformanceChart(analyticsData?.performance);
+}
+
+// --- Funciones de Actualización (si son necesarias) ---
+function updateChartData(chartId, newData) {
+    const chart = charts[chartId];
+    if (chart) {
+        chart.data = newData;
+        chart.update();
+        console.log(`Chart ${chartId} updated.`);
+    } else {
+        console.warn(`Chart ${chartId} not found for update.`);
     }
 }
-
-// Exportar si se usan módulos
-// export { initializeAllCharts, initializeActivityChart, ... };
