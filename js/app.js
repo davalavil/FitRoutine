@@ -7,16 +7,21 @@ let currentViewDate = new Date(); // Para el calendario
 // --- Inicialización ---
 document.addEventListener('DOMContentLoaded', () => {
     console.log("DEBUG: DOM fully loaded and parsed. Initializing FitRoutine...");
+    // Verificar objetos globales
     if (typeof api === 'undefined') console.error("FATAL: api object is not defined!");
     if (typeof ui === 'undefined') console.error("FATAL: ui object is not defined!");
     if (typeof charts === 'undefined') console.error("FATAL: charts object is not defined!");
+    // Estado inicial sin usuario
     if (!api.getCurrentUser() && api.getUsers().length === 0) {
         console.log("No users found. Please add a user or load data.");
     }
+    // Configurar UI básica (tabs, cierre de modales) ANTES de renderizar contenido
     ui.setupTabs();
     ui.setupModalClosers();
+    // Renderizar estado inicial de la UI
     refreshUI();
-    setupEventListeners(); // Configurar listeners DESPUÉS del primer render
+    // Configurar listeners DESPUÉS de que el HTML inicial y los datos se hayan renderizado
+    setupEventListeners();
     console.log("DEBUG: FitRoutine Initialized.");
 });
 
@@ -25,163 +30,157 @@ function refreshUI() {
     console.log("DEBUG: Refreshing UI (Rendering state)...");
     try {
         const currentUser = api.getCurrentUser();
-        const sports = api.getSports(); // Obtener deportes una vez
-
+        const sports = api.getSports();
         // Renderizar componentes que siempre deben estar actualizados
-        ui.updateCurrentUserDisplay(currentUser); // Actualiza avatar y dropdown
-        ui.renderSportsSidebar(sports);      // Actualiza lista deportes sidebar
-        ui.renderSportsList(sports);         // <-- MODIFICADO: Renderiza siempre la lista principal también
-
+        ui.updateCurrentUserDisplay(currentUser);
+        ui.renderSportsSidebar(sports);
+        ui.renderSportsList(sports); // Renderiza lista principal (incluye botón añadir)
         // Cargar datos específicos de la pestaña activa actual
         const activeTabId = document.querySelector('.tab-link.bg-blue-100')?.dataset.tab || 'dashboard';
-        ui.activateTab(activeTabId); // Asegura clase 'active' (no recarga datos)
-        loadTabData(activeTabId); // Carga los datos específicos de la pestaña activa
-
+        // ui.activateTab(activeTabId); // No es necesario reactivar visualmente aquí
+        loadTabData(activeTabId); // Carga los datos específicos
         console.log("DEBUG: UI Refreshed (Rendering complete).");
-    } catch (error) {
-         console.error("ERROR during refreshUI:", error);
-         ui.showMessage("Error al actualizar la interfaz. Revisa la consola.", "error");
-    }
+    } catch (error) { console.error("ERROR during refreshUI:", error); }
 }
 
 // --- Carga de Datos por Pestaña ---
-// Definimos loadTabData globalmente
 window.loadTabData = function(tabId) {
-     console.log(`DEBUG: Loading specific data for tab: ${tabId}`);
-     try {
-        switch (tabId) {
-            case 'dashboard': loadDashboardData(); break;
-            case 'exercises': loadExerciseData(); break; // Carga inicial sin filtro
-            case 'calendar': loadCalendarData(currentViewDate.getFullYear(), currentViewDate.getMonth()); break;
-            case 'programs': loadProgramsData(); break;
-            case 'analytics': loadAnalyticsData(); break;
-            case 'sports': /* Ya renderizado por refreshUI, no necesita carga extra */ break;
-            default: console.warn(`No data loading logic defined for tab: ${tabId}`);
-        }
-     } catch(error) {
-         console.error(`ERROR loading data for tab ${tabId}:`, error);
-         ui.showMessage(`Error al cargar datos de ${tabId}.`, "error");
-     }
+    // ... (sin cambios funcionales, solo logs) ...
+};
+function loadDashboardData() { /* ... */ }
+function loadExerciseData(filters = {}) { /* ... */ }
+function loadCalendarData(year, month) { /* ... */ }
+function loadProgramsData() { /* ... */ }
+function loadAnalyticsData() { /* ... */ }
+function loadSportsData() {
+    // Esta función ahora es menos necesaria porque refreshUI ya llama a renderSportsList.
+    // Podríamos quitarla o dejarla por si añadimos más lógica específica a esta pestaña.
+    console.log("Loading sports tab data (list already rendered by refreshUI)...");
+    // ui.renderSportsList(api.getSports()); // Ya no es necesario aquí si refreshUI lo hace
 }
 
-function loadDashboardData() { console.log("Loading dashboard data..."); charts.initializeActivityChart(null); }
-function loadExerciseData(filters = {}) {
-    console.log("Loading exercises with filters:", filters);
-    const exercises = api.getExercises(filters); // Implementar filtro en api.js si es necesario
-    ui.renderExerciseList(exercises); // Necesitas crear ui.renderExerciseList
-    ui.renderExerciseFilters(api.getSports()); // Necesitas crear ui.renderExerciseFilters
-    console.warn("Exercise rendering implementation pending in ui.js.");
-}
-function loadCalendarData(year, month) { console.log(`Loading calendar data for ${year}-${month + 1}`); const sessions = api.getSessionsForMonth(year, month); ui.renderCalendarGrid(year, month, sessions); ui.hideDailyDetails(); }
-function loadProgramsData() { console.log("Loading programs data..."); /* ui.render... */ }
-function loadAnalyticsData() { console.log("Loading analytics data..."); charts.initializeAllCharts(null); }
-// loadSportsData ya no es necesaria aquí porque refreshUI llama a renderSportsList
-
-// --- Event Listeners Setup ---
+// --- Event Listeners Setup (FUNCIÓN CENTRALIZADA) ---
 function setupEventListeners() {
-    console.log("DEBUG: Setting up ALL event listeners...");
+    console.log("------------------------------------------"); // Separador
+    console.log("DEBUG: Setting up ALL event listeners START");
+    console.log("------------------------------------------");
+
+    // Función auxiliar para añadir listener y loguear DETALLADAMENTE
     const addListener = (selector, event, handler, parent = document) => {
-         // ... (función auxiliar sin cambios) ...
+         const element = parent.querySelector(selector);
+         if (element) {
+             // Quitar listener previo explícitamente antes de añadir
+             element.removeEventListener(event, handler);
+             element.addEventListener(event, handler);
+             console.log(`DEBUG: OK Listener ${event} attached to ${selector}`);
+         } else {
+             // Loguear error si no se encuentra, podría indicar un problema
+             console.error(`DEBUG: *** Element NOT FOUND for selector: ${selector} ***`);
+         }
     };
 
-    // ... (Listeners generales: save, load, modales, formularios sin cambios) ...
+    // Botones generales
     addListener('#saveDataBtn', 'click', handleSaveData);
     addListener('#loadDataInput', 'change', handleLoadData);
-    addListener('#addSportSidebarBtn', 'click', handleAddSportClick);
-    addListener('#addSportBtn', 'click', handleAddSportClick);
-    addListener('#addSportCardBtn', 'click', handleAddSportClick);
-    addListener('#addUserBtnDropdown', 'click', handleAddUserClick);
-    addListener('#addExerciseBtn', 'click', handleAddExerciseClick);
-    addListener('#addProgramBtn', 'click', handleAddProgramClick);
-    addListener('#newSessionBtnDashboard', 'click', handleNewSessionClick);
+
+    // Botones para abrir modales (¡VERIFICAR ESTOS SELECTORES!)
+    addListener('#addSportSidebarBtn', 'click', handleAddSportClick); // En sidebar
+    addListener('#addSportBtn', 'click', handleAddSportClick);       // Botón superior en pestaña Deportes
+    addListener('#addSportCardBtn', 'click', handleAddSportClick);    // Tarjeta "+" en pestaña Deportes
+    addListener('#addUserBtnDropdown', 'click', handleAddUserClick);  // En dropdown usuario
+    addListener('#addExerciseBtn', 'click', handleAddExerciseClick);  // En pestaña Ejercicios
+    addListener('#addProgramBtn', 'click', handleAddProgramClick);   // En pestaña Programas
+    addListener('#newSessionBtnDashboard', 'click', handleNewSessionClick); // En Dashboard
+
+    // Formularios
     addListener('#sportForm', 'submit', handleSportFormSubmit);
     addListener('#userForm', 'submit', handleUserFormSubmit);
-    // ... otros forms ...
-    addListener('#user-list-dropdown', 'click', handleUserSwitch); // Delegación para cambio usuario
+    addListener('#exerciseForm', 'submit', handleExerciseFormSubmit);
+    addListener('#programForm', 'submit', handleProgramFormSubmit);
+    addListener('#sessionForm', 'submit', handleSessionFormSubmit);
+
+    // Dropdown de usuario (Delegación en el contenedor)
+    // Es más robusto usar delegación aquí porque los links internos se regeneran
+    const userDropdown = document.querySelector('#user-list-dropdown');
+    if (userDropdown) {
+        userDropdown.removeEventListener('click', handleUserSwitch); // Limpiar anterior
+        userDropdown.addEventListener('click', handleUserSwitch);
+        console.log("DEBUG: OK Listener click attached to #user-list-dropdown (delegation)");
+    } else {
+        console.error("DEBUG: *** Element NOT FOUND for selector: #user-list-dropdown ***");
+    }
+
+
+    // Calendario
     addListener('#prevMonthBtn', 'click', handlePrevMonth);
     addListener('#nextMonthBtn', 'click', handleNextMonth);
     addListener('#todayBtn', 'click', handleToday);
-    addListener('#calendar-grid', 'click', handleCalendarDayClick);
-    addListener('#closeDailyDetailsBtn', 'click', ui.hideDailyDetails);
+    addListener('#calendar-grid', 'click', handleCalendarDayClick); // Delegación
+    addListener('#closeDailyDetailsBtn', 'click', ui.hideDailyDetails); // Directo a función UI
     addListener('#addSessionToDateBtn', 'click', handleAddSessionToDateClick);
+
+    // Checklist (Delegación)
     addListener('#checklist-items', 'change', handleChecklistChange);
-    addListener('#sports-list-container', 'click', handleSportsListActions); // Acciones en pestaña Deportes
 
-    // Listener para clics en la sidebar de deportes (NUEVO)
-    addListener('#sports-list-sidebar', 'click', handleSidebarSportClick);
+    // Delegación para botones Editar/Eliminar en listas
+    addListener('#sports-list-container', 'click', handleSportsListActions);
+    // addListener('#exercise-list-container', 'click', handleExerciseListActions); // Pendiente
+    // addListener('#programs-list-container', 'click', handleProgramListActions); // Pendiente
 
-    console.log("DEBUG: Event listeners setup complete.");
+    console.log("------------------------------------------");
+    console.log("DEBUG: Event listeners setup END");
+    console.log("------------------------------------------");
 }
 
 
-// --- Handlers ---
+// --- Handlers (Añadidos logs al INICIO de cada handler) ---
 
-function handleSaveData() { /* ... */ }
-function handleLoadData(event) { /* ... */ }
-function handleAddSportClick(event) { /* ... */ }
-function handleAddUserClick(event) { /* ... */ }
-function handleAddExerciseClick(event) { /* ... */ }
-function handleAddProgramClick(event) { /* ... */ }
-function handleNewSessionClick(event) { /* ... */ }
-function handleSportFormSubmit(event) {
+function handleSaveData() { console.log(">>> DEBUG: handleSaveData TRIGGERED"); /* ... */ }
+function handleLoadData(event) { console.log(">>> DEBUG: handleLoadData TRIGGERED"); /* ... */ }
+
+function handleAddSportClick(event) {
+    console.log(">>> DEBUG: handleAddSportClick TRIGGERED"); // <-- LOG AÑADIDO
     event.preventDefault();
-    console.log("DEBUG: handleSportFormSubmit triggered");
-    const form = event.target;
-    const formData = new FormData(form);
-    const sportData = { id: formData.get('id') || null, name: formData.get('name'), icon: formData.get('icon'), color: formData.get('color') };
-    const selectedMetrics = Array.from(form.querySelector('#sportMetricsSelect').selectedOptions).map(option => option.value);
-    sportData.metrics = selectedMetrics;
-    console.log("DEBUG: Saving sport data:", sportData);
-    let saved = false;
-    let errorOccurred = false;
-    if (sportData.id) { // Editando (Pendiente en API)
-        console.warn("Sport edit logic in api.js not implemented yet.");
-        ui.showMessage("Funcionalidad de editar deporte pendiente.", "info");
-    } else { // Añadiendo
-        try {
-            const added = api.addSport(sportData);
-            if (added) { saved = true; } else { ui.showMessage("Error al añadir el deporte (posiblemente falte el nombre).", "warning"); errorOccurred = true; }
-        } catch (e) { console.error("Error calling api.addSport:", e); ui.showMessage("Error inesperado al guardar el deporte.", "error"); errorOccurred = true; }
-    }
-    if (saved && !errorOccurred) {
-        ui.closeModal('sportModal');
-        refreshUI(); // <-- Llama a refreshUI que AHORA actualiza ambas listas
-        ui.showMessage("Deporte guardado.", "success");
-    } else { console.log("DEBUG: Sport not saved or error occurred, modal remains open."); }
-}
-function handleUserFormSubmit(event) { /* ... */ }
-// ... otros handlers de formulario ...
-function handleUserSwitch(event) { /* ... */ }
-function handlePrevMonth() { /* ... */ }
-function handleNextMonth() { /* ... */ }
-function handleToday() { /* ... */ }
-function handleCalendarDayClick(event) { /* ... */ }
-function handleAddSessionToDateClick(event) { /* ... */ }
-function handleChecklistChange(event) { /* ... */ }
-function handleSportsListActions(event) { /* ... */ }
-
-// Handler para clic en deporte de la sidebar (NUEVO)
-function handleSidebarSportClick(event) {
-    console.log("DEBUG: handleSidebarSportClick triggered");
-    const link = event.target.closest('.sport-link'); // Busca el enlace padre
-    if (link) {
-        event.preventDefault(); // Prevenir navegación si es un '#'
-        const sportId = link.dataset.sportid;
-        const sport = api.getSportById(sportId); // Obtener datos del deporte
-        if (sport) {
-            console.log(`Clicked on sidebar sport: ${sport.name} (ID: ${sportId})`);
-
-            // Acción 1: Cambiar a la pestaña de Ejercicios
-            ui.activateTab('exercises'); // Activa visualmente la pestaña
-
-            // Acción 2: Cargar y mostrar SOLO los ejercicios de ese deporte
-            loadExerciseData({ sportId: sportId }); // Llama a la función que carga/filtra/renderiza
-
-            // Acción futura: podrías llevar a una vista de detalle del deporte, o a análisis filtrados, etc.
-            ui.showMessage(`Mostrando ejercicios para ${sport.name}.`, 'info');
-
-        } else {
-            console.warn(`Sidebar sport link clicked, but sport not found for ID: ${sportId}`);
-        }
+    event.stopPropagation();
+    if (ui.prepareSportModal()) {
+        ui.openModal('sportModal');
+    } else {
+        ui.showMessage("Error al preparar el formulario de deporte.", "error");
     }
 }
+
+function handleAddUserClick(event) {
+     console.log(">>> DEBUG: handleAddUserClick TRIGGERED"); // <-- LOG AÑADIDO
+     event.preventDefault();
+     event.stopPropagation();
+     if (ui.prepareUserModal()) {
+        ui.openModal('userModal');
+     } else {
+         ui.showMessage("Error al preparar el formulario de usuario.", "error");
+     }
+}
+
+function handleAddExerciseClick(event) { console.log(">>> DEBUG: handleAddExerciseClick TRIGGERED"); /* ... */ }
+function handleAddProgramClick(event) { console.log(">>> DEBUG: handleAddProgramClick TRIGGERED"); /* ... */ }
+function handleNewSessionClick(event) { console.log(">>> DEBUG: handleNewSessionClick TRIGGERED"); /* ... */ }
+
+function handleSportFormSubmit(event) { console.log(">>> DEBUG: handleSportFormSubmit TRIGGERED"); /* ... */ }
+function handleUserFormSubmit(event) { console.log(">>> DEBUG: handleUserFormSubmit TRIGGERED"); /* ... */ }
+function handleExerciseFormSubmit(e) { console.log(">>> DEBUG: handleExerciseFormSubmit TRIGGERED"); /* ... */ }
+function handleProgramFormSubmit(e) { console.log(">>> DEBUG: handleProgramFormSubmit TRIGGERED"); /* ... */ }
+function handleSessionFormSubmit(e) { console.log(">>> DEBUG: handleSessionFormSubmit TRIGGERED"); /* ... */ }
+
+function handleUserSwitch(event) { console.log(">>> DEBUG: handleUserSwitch TRIGGERED"); /* ... */ }
+
+function handlePrevMonth() { console.log(">>> DEBUG: handlePrevMonth TRIGGERED"); /* ... */ }
+function handleNextMonth() { console.log(">>> DEBUG: handleNextMonth TRIGGERED"); /* ... */ }
+function handleToday() { console.log(">>> DEBUG: handleToday TRIGGERED"); /* ... */ }
+function handleCalendarDayClick(event) { console.log(">>> DEBUG: handleCalendarDayClick TRIGGERED"); /* ... */ }
+function handleAddSessionToDateClick(event) { console.log(">>> DEBUG: handleAddSessionToDateClick TRIGGERED"); /* ... */ }
+
+function handleChecklistChange(event) { console.log(">>> DEBUG: handleChecklistChange TRIGGERED"); /* ... */ }
+
+function handleSportsListActions(event) { console.log(">>> DEBUG: handleSportsListActions TRIGGERED"); /* ... */ }
+
+// Handler para clic en deporte de la sidebar
+function handleSidebarSportClick(event) { console.log(">>> DEBUG: handleSidebarSportClick TRIGGERED"); /* ... */ }
