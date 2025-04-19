@@ -56,6 +56,11 @@ const ui = (() => {
         modal.style.display = 'none';
         const form = modal.querySelector('form');
         if (form) form.reset();
+        // Deseleccionar opciones en select multiple al cerrar
+        const multiSelects = modal.querySelectorAll('select[multiple]');
+        multiSelects.forEach(select => {
+            Array.from(select.options).forEach(option => option.selected = false);
+        });
     }
 
     function setupModalClosers() {
@@ -79,26 +84,38 @@ const ui = (() => {
         const modal = document.getElementById('sportModal');
         const form = document.getElementById('sportForm');
         const title = document.getElementById('sportModalTitle');
-        if (!modal || !form || !title) return;
+        const metricsSelect = document.getElementById('sportMetricsSelect'); // Obtener el select
+
+        if (!modal || !form || !title || !metricsSelect) return;
 
         form.reset();
         document.getElementById('sportId').value = '';
+        // Deseleccionar todas las opciones del select
+        Array.from(metricsSelect.options).forEach(option => option.selected = false);
 
-        if (sport) {
+        if (sport) { // Editando
             title.textContent = "Editar Deporte";
             document.getElementById('sportId').value = sport.id;
             document.getElementById('sportName').value = sport.name;
             document.getElementById('sportIcon').value = sport.icon || '';
             document.getElementById('sportColor').value = sport.color || '';
-             form.querySelectorAll('input[name="metrics"]').forEach(checkbox => {
-                checkbox.checked = sport.metrics?.includes(checkbox.value) || false;
-            });
-        } else {
+
+            // Seleccionar las métricas guardadas en el <select multiple>
+            if (sport.metrics && Array.isArray(sport.metrics)) {
+                sport.metrics.forEach(savedMetric => {
+                    const option = Array.from(metricsSelect.options).find(opt => opt.value === savedMetric);
+                    if (option) {
+                        option.selected = true;
+                    }
+                });
+            }
+        } else { // Añadiendo
             title.textContent = "Añadir Deporte";
         }
     }
 
     function prepareUserModal(user = null) {
+         // ... (Sin cambios aquí) ...
          const modal = document.getElementById('userModal');
          const form = document.getElementById('userForm');
          if (!modal || !form) return;
@@ -106,7 +123,6 @@ const ui = (() => {
          if (user) {
              console.warn("UI: Edit user UI not fully implemented");
              modal.querySelector('h2').textContent = "Editar Usuario";
-             // Rellenar campos...
          } else {
              modal.querySelector('h2').textContent = "Añadir Usuario";
          }
@@ -115,6 +131,7 @@ const ui = (() => {
     // ----- Renderizado de Listas -----
 
     function renderSportsSidebar(sports) {
+        // ... (Sin cambios aquí) ...
         const container = document.getElementById('sports-list-sidebar');
         if (!container) return;
         const addSportBtnLi = container.querySelector('#addSportSidebarBtn')?.parentElement;
@@ -147,10 +164,11 @@ const ui = (() => {
     }
 
     function renderSportsList(sports) {
+        // ... (Sin cambios aquí, pero se beneficia de la corrección de la llamada a api.getExercises) ...
         const container = document.getElementById('sports-list-container');
         const addSportCardBtn = document.getElementById('addSportCardBtn');
         if (!container) return;
-        container.innerHTML = ''; // Limpiar solo las tarjetas
+        container.innerHTML = '';
 
         if (sports && sports.length > 0) {
             sports.forEach(sport => {
@@ -160,7 +178,6 @@ const ui = (() => {
                 const tagBgColor = headerColor.includes('gray') || headerColor.includes('white') ? 'bg-gray-200' : headerColor.replace('bg-', 'bg-') + '-100';
                 const tagTextColor = headerColor.includes('gray') || headerColor.includes('white') ? 'text-gray-700' : headerColor.replace('bg-', 'text-') + '-800';
 
-                // Corregido: Llamar a api.getExercises que ahora es global
                 const exerciseCount = typeof api !== 'undefined' ? api.getExercises({ sportId: sport.id }).length : 0;
 
                 div.className = 'bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow overflow-hidden';
@@ -189,29 +206,28 @@ const ui = (() => {
                 container.appendChild(div);
             });
         }
-        // Asegurarse de que el botón añadir esté siempre al final
         if (addSportCardBtn) {
              container.appendChild(addSportCardBtn);
         }
     }
 
     // ----- Renderizado de Usuarios -----
-
     function updateUserDropdown(users, currentUserId) {
+       // ... (Sin cambios aquí) ...
         const container = document.getElementById('user-list-dropdown');
         if (!container) return;
         container.innerHTML = '';
 
         let otherUsersExist = false;
         if (users && users.length > 0) {
-            users.forEach((user, index) => { // Añadir index para color
+            users.forEach((user, index) => {
                 if (user.id === currentUserId) return;
                 otherUsersExist = true;
                 const a = document.createElement('a');
                 a.href = '#';
                 a.className = 'text-gray-700 block px-4 py-2 text-sm hover:bg-gray-100 user-switch-link';
                 a.dataset.userid = user.id;
-                const avatarColor = `bg-${['green', 'purple', 'yellow', 'indigo', 'pink', 'blue', 'red'][index % 7]}-500`; // Usar índice general
+                const avatarColor = `bg-${['green', 'purple', 'yellow', 'indigo', 'pink', 'blue', 'red'][index % 7]}-500`;
 
                 a.innerHTML = `
                     <div class="flex items-center">
@@ -230,6 +246,7 @@ const ui = (() => {
     }
 
     function updateCurrentUserDisplay(user) {
+       // ... (Sin cambios aquí) ...
         const avatar = document.getElementById('currentUserAvatar');
         const initialsSpan = document.getElementById('currentUserInitials');
         const nameP = document.getElementById('currentUserName');
@@ -237,28 +254,28 @@ const ui = (() => {
 
         if(avatar) avatar.className = 'user-avatar cursor-pointer flex items-center justify-center';
 
-        if (user && typeof api !== 'undefined') { // Verificar que api existe
+        if (user && typeof api !== 'undefined') {
             if(initialsSpan) initialsSpan.textContent = user.initials || '--';
             if(nameP) nameP.textContent = user.name || 'Usuario';
             if(emailP) emailP.textContent = user.email || '';
              const users = api.getUsers();
              const userIndex = users.findIndex(u => u.id === user.id);
-             const color = ['green', 'purple', 'yellow', 'indigo', 'pink', 'blue', 'red'][userIndex >= 0 ? userIndex % 7 : 0]; // Fallback a green si no se encuentra
+             const color = ['green', 'purple', 'yellow', 'indigo', 'pink', 'blue', 'red'][userIndex >= 0 ? userIndex % 7 : 0];
              if(avatar) avatar.classList.add(`bg-${color}-500`);
-             updateUserDropdown(users, user.id); // Actualizar dropdown
+             updateUserDropdown(users, user.id);
         } else {
             if(initialsSpan) initialsSpan.textContent = '--';
             if(nameP) nameP.textContent = 'Sin Usuario';
             if(emailP) emailP.textContent = '';
             if(avatar) avatar.classList.add('bg-gray-500');
-            updateUserDropdown([], null); // Vaciar dropdown si no hay usuario
+            updateUserDropdown([], null);
         }
     }
 
 
     // ----- Renderizado del Calendario -----
-
     function renderCalendarGrid(year, month, sessions = []) {
+       // ... (Sin cambios aquí) ...
         const grid = document.getElementById('calendar-grid');
         const monthYearSpan = document.getElementById('calendar-month-year');
         if (!grid || !monthYearSpan) return;
@@ -295,6 +312,7 @@ const ui = (() => {
     }
 
     function createCalendarCell(day, isOtherMonth, isToday = false, dateStr = null, sessions = []) {
+       // ... (Sin cambios aquí) ...
         const cell = document.createElement('div');
         cell.className = 'calendar-day-cell relative text-xs sm:text-sm';
 
@@ -305,10 +323,8 @@ const ui = (() => {
         } else {
             cell.dataset.date = dateStr;
             if (isToday) {
-                // Aplicar el estilo "today" al número mismo
                 dayHtml = `<span class="day-number absolute top-1 right-1 sm:top-2 sm:right-2 bg-blue-500 text-white rounded-full w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center">${day}</span>`;
             } else {
-                 // Add hover effect only for current month days
                  cell.classList.add('hover:bg-blue-50');
             }
             if (sessions.length > 0) {
@@ -327,6 +343,7 @@ const ui = (() => {
     }
 
     function groupSessionsByDate(sessions) {
+       // ... (Sin cambios aquí) ...
          return (sessions || []).reduce((acc, session) => {
              if (!acc[session.date]) {
                  acc[session.date] = [];
@@ -337,6 +354,7 @@ const ui = (() => {
     }
 
     function showDailyDetails(date, sessions) {
+       // ... (Sin cambios aquí) ...
         const section = document.getElementById('daily-details-section');
         const title = document.getElementById('selected-date-title');
         const noWorkoutMsg = document.getElementById('no-workout-message');
@@ -344,7 +362,7 @@ const ui = (() => {
         const checklistItemsDiv = document.getElementById('checklist-items');
         if (!section || !title || !noWorkoutMsg || !checklistContainer || !checklistItemsDiv) return;
 
-        const dateObj = new Date(`${date}T12:00:00`); // Use T12:00:00 to avoid timezone issues affecting the date
+        const dateObj = new Date(`${date}T12:00:00`);
         const formattedDate = dateObj.toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
         title.textContent = formattedDate;
         checklistItemsDiv.innerHTML = '';
@@ -354,7 +372,7 @@ const ui = (() => {
             checklistContainer.style.display = 'block';
             checklistContainer.dataset.sessionid = sessions[0].id;
 
-            if (sessions[0].exercises && sessions[0].exercises.length > 0 && typeof api !== 'undefined') { // Check api exists
+            if (sessions[0].exercises && sessions[0].exercises.length > 0 && typeof api !== 'undefined') {
                 sessions[0].exercises.forEach((item, index) => {
                     const exercise = api.getExerciseById(item.exerciseId);
                     const exerciseName = exercise ? exercise.name : `Ejercicio ID: ${item.exerciseId}`;
@@ -380,15 +398,16 @@ const ui = (() => {
         }
 
         section.classList.remove('hidden');
-        // section.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); // Can be annoying, comment out if needed
     }
 
     function hideDailyDetails() {
+       // ... (Sin cambios aquí) ...
          const section = document.getElementById('daily-details-section');
          if(section) section.classList.add('hidden');
     }
 
     function updateChecklistItemStyle(checkbox) {
+       // ... (Sin cambios aquí) ...
         const listItem = checkbox.closest('.checklist-item');
         if (!listItem) return;
         if (checkbox.checked) {
@@ -400,20 +419,21 @@ const ui = (() => {
 
     // --- Mensajes y Carga ---
     function showMessage(message, type = 'info') {
+       // ... (Sin cambios aquí) ...
         const prefix = type === 'error' ? 'ERROR: ' : (type === 'success' ? 'ÉXITO: ' : 'INFO: ');
-        alert(prefix + message); // Simple alert, replace later
+        alert(prefix + message);
         console.log(`Message (${type}): ${message}`);
     }
 
 
-    // Objeto público que será asignado a la variable global 'ui'
+    // Objeto público
     return {
         setupTabs,
         activateTab,
         openModal,
         closeModal,
         setupModalClosers,
-        prepareSportModal,
+        prepareSportModal, // Modificado
         prepareUserModal,
         renderSportsSidebar,
         renderSportsList,
@@ -424,7 +444,6 @@ const ui = (() => {
         hideDailyDetails,
         updateChecklistItemStyle,
         showMessage
-        // Añadir más funciones públicas aquí si se crean
     };
 
 })(); // Fin de la IIFE
