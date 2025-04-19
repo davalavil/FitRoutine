@@ -1,0 +1,29 @@
+# Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+package-lock.json # A veces se incluye, a veces no. Depende del equipo.
+yarn.lock
+
+# Archivos de Entorno
+.env
+.env.*
+!.env.example
+
+# Archivos del Sistema Operativo
+.DS_Store
+Thumbs.db
+
+# Archivos de Build/Distribución (si usas un bundler como Webpack/Vite)
+dist/
+build/
+out/
+
+# Archivos de IDEs/Editores
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Otros
+*.log
