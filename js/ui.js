@@ -1,13 +1,13 @@
 // js/ui.js
+console.log("ui.js loaded");
 
-// ... (Código existente de ui.js: IIFE, MONTH_NAMES, setupTabs, activateTab, modales, prepareModals, renderSports*, updateUser*, renderCalendar*, etc.) ...
-
+// Usamos una IIFE para encapsular y exponer el objeto 'ui'
 const ui = (() => {
 
-    // ... (Variables y funciones existentes) ...
+    const MONTH_NAMES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+    let justOpenedModal = false; // Flag para evitar cierre inmediato
 
-    // ----- Renderizado de Ejercicios -----
-
+    // ----- Renderizado de Ejercicios (Definido ANTES de ser usado por renderSportsList) -----
     function renderExerciseList(exercises) {
         const container = document.getElementById('exercise-list-container');
         if (!container) {
@@ -65,48 +65,196 @@ const ui = (() => {
          if (sports && sports.length > 0) {
             sports.forEach(sport => {
                 const button = document.createElement('button');
-                button.className = `px-3 py-1 rounded-md filter-btn text-sm ${activeFilter === sport.id ? 'bg-blue-600 text-white' : 'bg-gray-200 hover:bg-gray-300'}`;
+                // Ajuste de clases para mejor apariencia
+                button.className = `px-3 py-1 rounded-md filter-btn text-sm transition-colors duration-150 ease-in-out ${activeFilter === sport.id ? 'bg-blue-600 text-white shadow-md' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`;
                 button.dataset.filter = sport.id; // Usar ID del deporte como filtro
                 button.textContent = sport.name;
                 container.appendChild(button);
             });
          }
 
-         // Marcar visualmente el filtro activo
+         // Marcar visualmente el filtro activo (revisado para asegurar que funcione)
          container.querySelectorAll('.filter-btn').forEach(btn => {
              if (btn.dataset.filter === activeFilter) {
-                 btn.classList.remove('bg-gray-200', 'hover:bg-gray-300');
-                 btn.classList.add('bg-blue-600', 'text-white');
+                 btn.classList.remove('bg-gray-200', 'text-gray-700', 'hover:bg-gray-300');
+                 btn.classList.add('bg-blue-600', 'text-white', 'shadow-md');
              } else {
-                  btn.classList.remove('bg-blue-600', 'text-white');
-                  btn.classList.add('bg-gray-200', 'hover:bg-gray-300');
+                  btn.classList.remove('bg-blue-600', 'text-white', 'shadow-md');
+                  btn.classList.add('bg-gray-200', 'text-gray-700', 'hover:bg-gray-300');
              }
          });
     }
 
-    // ... (Resto de funciones y el objeto return) ...
 
-    // Objeto público (AÑADIR renderExerciseList y renderExerciseFilters)
+    // ----- Pestañas -----
+    function setupTabs() {
+        const tabLinks = document.querySelectorAll('.tab-link');
+        const tabContents = document.querySelectorAll('.tab-content');
+        if (!tabLinks.length) return;
+
+        tabLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const tabId = link.getAttribute('data-tab');
+                activateTab(tabId);
+                if (typeof window.loadTabData === 'function') {
+                    window.loadTabData(tabId);
+                } else {
+                    console.warn("loadTabData function not found globally.");
+                }
+            });
+        });
+    }
+
+    function activateTab(tabId) {
+        console.log("UI: Activating tab:", tabId)
+        const tabLinks = document.querySelectorAll('.tab-link');
+        const tabContents = document.querySelectorAll('.tab-content');
+        tabLinks.forEach(l => l.classList.remove('bg-blue-100', 'text-blue-700'));
+        tabContents.forEach(c => c.classList.remove('active'));
+        const activeLink = document.querySelector(`.tab-link[data-tab="${tabId}"]`);
+        const activeContent = document.getElementById(tabId);
+        if (activeLink) activeLink.classList.add('bg-blue-100', 'text-blue-700');
+        if (activeContent) activeContent.classList.add('active');
+        else console.warn(`UI: Tab content not found for id: ${tabId}`);
+    }
+
+    // ----- Modales -----
+    function openModal(modalId) {
+        const modal = document.getElementById(modalId);
+        console.log(`DEBUG: Attempting to open modal: ${modalId}`, modal);
+        if (modal) {
+            modal.style.display = 'block';
+            console.log(`DEBUG: Modal ${modalId} display set to 'block'`);
+            justOpenedModal = true;
+            setTimeout(() => {
+                justOpenedModal = false;
+                console.log("DEBUG: Modal open flag reset.");
+             }, 150);
+        } else {
+            console.warn(`UI: Modal not found: ${modalId}`);
+        }
+    }
+
+    function closeModal(modalId) {
+        const modal = document.getElementById(modalId);
+        console.log(`DEBUG: Attempting to close modal: ${modalId}`, modal);
+        if (!modal) return;
+        modal.style.display = 'none';
+        console.log(`DEBUG: Modal ${modalId} display set to 'none'`);
+        const form = modal.querySelector('form');
+        if (form) form.reset();
+        const multiSelects = modal.querySelectorAll('select[multiple]');
+        multiSelects.forEach(select => {
+            Array.from(select.options).forEach(option => option.selected = false);
+        });
+    }
+
+    function setupModalClosers() {
+        console.log("DEBUG: Setting up modal closers");
+        document.querySelectorAll('.modal .close-button').forEach(button => { /* Listener X */ });
+        document.querySelectorAll('.modal .modal-cancel-btn').forEach(button => { /* Listener Cancel */ });
+        console.log("DEBUG: Setting up window onclick listener for modals");
+        window.onclick = function(event) { /* Listener clic fuera */ };
+    }
+
+    // --- Funciones Específicas de Preparación de Modales ---
+    function prepareSportModal(sport = null) {
+        console.log("DEBUG: Preparing sport modal. Editing:", !!sport);
+        const modal = document.getElementById('sportModal');
+        const form = document.getElementById('sportForm');
+        const title = document.getElementById('sportModalTitle');
+        const metricsSelect = document.getElementById('sportMetricsSelect');
+        if (!modal || !form || !title || !metricsSelect) {
+             console.error("DEBUG: Sport modal elements not found! Cannot prepare.");
+             return false;
+        }
+        try {
+            form.reset();
+            document.getElementById('sportId').value = '';
+            Array.from(metricsSelect.options).forEach(option => option.selected = false);
+            if (sport) { /* Rellenar para editar */ } else { title.textContent = "Añadir Deporte"; }
+            console.log("DEBUG: Sport modal prepared successfully.");
+            return true;
+        } catch (error) { console.error("DEBUG: Error during prepareSportModal:", error); return false; }
+    }
+
+    function prepareUserModal(user = null) {
+         console.log("DEBUG: Preparing user modal. Editing:", !!user);
+         const modal = document.getElementById('userModal');
+         const form = document.getElementById('userForm');
+         if (!modal || !form) { console.error("DEBUG: User modal elements not found!"); return false; }
+         try {
+             form.reset();
+             if (user) { /* Editar */ } else { modal.querySelector('h2').textContent = "Añadir Usuario"; }
+              console.log("DEBUG: User modal prepared successfully.");
+              return true;
+         } catch(error) { console.error("DEBUG: Error during prepareUserModal:", error); return false; }
+    }
+
+    // ----- Renderizado de Listas -----
+
+    function renderSportsSidebar(sports) {
+        const container = document.getElementById('sports-list-sidebar');
+        if (!container) { console.error("UI Error: Sidebar sports container not found!"); return; }
+        const addSportBtnLi = container.querySelector('#addSportSidebarBtn')?.parentElement;
+        container.innerHTML = '';
+        if (sports && sports.length > 0) { /* Añadir lis de deportes */ } else { container.innerHTML = '<li><p>...</p></li>'; }
+        if (addSportBtnLi) { container.appendChild(addSportBtnLi); } else { console.warn("UI Warning: Could not find 'Add Sport' button in sidebar."); }
+    }
+
+    function renderSportsList(sports) {
+        const container = document.getElementById('sports-list-container');
+        const addSportCardBtn = document.getElementById('addSportCardBtn');
+        if (!container) return;
+        container.innerHTML = '';
+        if (sports && sports.length > 0) {
+            sports.forEach(sport => { /* Crear y añadir tarjeta */ });
+        }
+        if (addSportCardBtn) { container.appendChild(addSportCardBtn); }
+    }
+
+    // ----- Renderizado de Usuarios -----
+    function updateUserDropdown(users, currentUserId) { /* ... */ }
+    function updateCurrentUserDisplay(user) { /* ... */ }
+
+    // ----- Renderizado del Calendario -----
+    function renderCalendarGrid(year, month, sessions = []) { /* ... */ }
+    function createCalendarCell(day, isOtherMonth, isToday = false, dateStr = null, sessions = []) { /* ... */ }
+    function groupSessionsByDate(sessions) { /* ... */ }
+    function showDailyDetails(date, sessions) { /* ... */ }
+    function hideDailyDetails() { /* ... */ }
+    function updateChecklistItemStyle(checkbox) { /* ... */ }
+
+    // --- Mensajes y Carga ---
+    function showMessage(message, type = 'info') { /* ... */ }
+
+
+    // Objeto público (Verificar que todas las funciones estén definidas ANTES de esta línea)
     return {
-        // ... (funciones existentes) ...
+        // Funciones de inicialización y configuración
         setupTabs,
-        activateTab,
+        setupModalClosers,
+        // Funciones para abrir/cerrar
         openModal,
         closeModal,
-        setupModalClosers,
+        // Funciones para preparar modales específicos
         prepareSportModal,
         prepareUserModal,
+        // Funciones de Renderizado
+        activateTab, // También actualiza UI
         renderSportsSidebar,
         renderSportsList,
+        renderExerciseList,    // Añadida previamente
+        renderExerciseFilters, // Añadida previamente
         updateUserDropdown,
         updateCurrentUserDisplay,
         renderCalendarGrid,
         showDailyDetails,
         hideDailyDetails,
         updateChecklistItemStyle,
-        showMessage,
-        renderExerciseList,    // <-- AÑADIDO
-        renderExerciseFilters  // <-- AÑADIDO
+        // Otras utilidades UI
+        showMessage
     };
 
 })(); // Fin de la IIFE
