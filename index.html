@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FitRoutine Pro V3 - App Multideporte y Multiusuario</title>
+    <!-- Tailwind CSS CDN (o enlace a tu archivo compilado si usas npm) -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <!-- Font Awesome CDN -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.0.0/css/all.min.css">
+    <!-- Enlace a tu CSS personalizado -->
+    <link rel="stylesheet" href="css/custom.css">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+</head>
+<body class="bg-gray-100">
+    <!-- Top Navigation -->
+    <nav class="bg-gradient-to-r from-blue-600 to-indigo-800 text-white p-4 shadow-md">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <i class="fas fa-dumbbell text-2xl"></i>
+                <span class="text-xl font-bold">FitRoutine Pro V3</span>
+            </div>
+            <!-- Dropdown de Usuario -->
+            <div class="relative group">
+                <div id="currentUserAvatar" class="user-avatar bg-green-500 cursor-pointer flex items-center justify-center">
+                    <span id="currentUserInitials">JD</span>
+                </div>
+                <div class="absolute right-0 w-48 bg-white rounded-md shadow-lg mt-2 py-1 z-10 hidden group-hover:block">
+                    <!-- Contenido del dropdown (se puede cargar dinámicamente) -->
+                    <div class="px-4 py-2 text-sm text-gray-700 border-b">
+                        <p id="currentUserName" class="font-bold text-gray-900">Juan Deportista</p>
+                        <p id="currentUserEmail" class="text-xs text-gray-500">juan@example.com</p>
+                    </div>
+                    <div id="user-list-dropdown" class="py-1">
+                        <!-- Placeholder para lista de usuarios -->
+                    </div>
+                    <div class="border-t">
+                        <a href="#" id="addUserBtn" class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-100"><i class="fas fa-user-plus mr-2"></i> Añadir usuario</a>
+                        <a href="#" class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-100"><i class="fas fa-cog mr-2"></i> Configuración</a>
+                        <a href="#" class="text-red-600 block px-4 py-2 text-sm hover:bg-gray-100"><i class="fas fa-sign-out-alt mr-2"></i> Cerrar sesión</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Contenedor Principal (Sidebar + Content) -->
+    <div class="flex flex-col md:flex-row container mx-auto my-4">
+        <!-- Sidebar Navigation -->
+        <div class="md:w-64 bg-white rounded-lg shadow-md p-4 md:mr-4 mb-4 md:mb-0">
+            <div class="sidebar">
+                <h2 class="text-lg font-bold mb-4">Menú Principal</h2>
+                <ul class="space-y-2">
+                    <!-- Links de Tabs (data-tab es importante) -->
+                    <li><a href="#" class="tab-link flex items-center p-2 rounded-md bg-blue-100 text-blue-700" data-tab="dashboard"><i class="fas fa-tachometer-alt w-6"></i><span>Panel Principal</span></a></li>
+                    <li><a href="#" class="tab-link flex items-center p-2 rounded-md hover:bg-gray-100" data-tab="exercises"><i class="fas fa-running w-6"></i><span>Ejercicios</span></a></li>
+                    <li><a href="#" class="tab-link flex items-center p-2 rounded-md hover:bg-gray-100" data-tab="calendar"><i class="far fa-calendar-alt w-6"></i><span>Calendario</span></a></li>
+                    <li><a href="#" class="tab-link flex items-center p-2 rounded-md hover:bg-gray-100" data-tab="programs"><i class="fas fa-clipboard-list w-6"></i><span>Programas</span></a></li>
+                    <li><a href="#" class="tab-link flex items-center p-2 rounded-md hover:bg-gray-100" data-tab="analytics"><i class="fas fa-chart-line w-6"></i><span>Análisis</span></a></li>
+                    <li><a href="#" class="tab-link flex items-center p-2 rounded-md hover:bg-gray-100" data-tab="sports"><i class="fas fa-trophy w-6"></i><span>Deportes</span></a></li>
+                </ul>
+                <h2 class="text-lg font-bold mt-6 mb-2">Mis Deportes</h2>
+                <ul id="sports-list-sidebar" class="space-y-2">
+                    <!-- Placeholder para lista de deportes -->
+                    <li><a href="#" id="addSportSidebarBtn" class="flex items-center p-2 rounded-md text-blue-600"><i class="fas fa-plus-circle mr-2"></i><span>Añadir Deporte</span></a></li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="flex-1 bg-white rounded-lg shadow-md p-4">
+            <div class="main-content">
+                <!-- Contenido de las Pestañas (Tabs) -->
+                <!-- Dashboard Tab -->
+                <div id="dashboard" class="tab-content active">
+                    <div class="flex justify-between items-center mb-6"><h1 class="text-2xl font-bold">Panel Principal</h1><button id="newSessionBtnDashboard" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"><i class="fas fa-plus mr-2"></i>Nueva Sesión Rápida</button></div>
+                    <div class="mb-6"><h2 class="text-xl font-semibold mb-4">Resumen de actividad</h2><div id="activity-summary" class="grid grid-cols-1 md:grid-cols-3 gap-4"><!-- Resumen cards load here --></div></div>
+                    <div class="mb-6"><h2 class="text-xl font-semibold mb-4">Próximas sesiones</h2><div id="upcoming-sessions-list" class="bg-white rounded-lg border border-gray-200 overflow-hidden"><!-- Próximas sesiones load here --></div></div>
+                    <div class="mb-6"><h2 class="text-xl font-semibold mb-4">Progreso reciente</h2><div class="bg-white rounded-lg border border-gray-200 p-4"><div class="chart-container"><canvas id="activityChart"></canvas></div></div></div>
+                </div>
+
+                <!-- Exercises Tab -->
+                <div id="exercises" class="tab-content">
+                    <div class="flex justify-between items-center mb-6"><h1 class="text-2xl font-bold">Biblioteca de Ejercicios</h1><button id="addExerciseBtn" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"><i class="fas fa-plus mr-2"></i>Nuevo Ejercicio</button></div>
+                    <div class="mb-6"><div id="exercise-filters" class="flex flex-wrap gap-2 mb-4"><!-- Filtros load here --></div><div class="relative mb-4"><input type="text" id="searchExerciseInput" placeholder="Buscar ejercicios..." class="w-full p-3 pl-10 border border-gray-300 rounded-md"><i class="fas fa-search absolute left-3 top-3 text-gray-400"></i></div><div id="exercise-list-container" class="grid grid-cols-1 md:grid-cols-2 gap-4"><!-- Lista de ejercicios load here --></div></div>
+                </div>
+
+                <!-- Calendar Tab -->
+                <div id="calendar" class="tab-content">
+                     <div class="flex justify-between items-center mb-6"><h1 class="text-2xl font-bold">Calendario de Entrenamientos</h1><div class="flex space-x-2"><button id="todayBtn" class="border border-gray-300 bg-white px-4 py-2 rounded-md">Hoy</button><button id="prevMonthBtn" class="border border-gray-300 bg-white px-3 py-2 rounded-md"><i class="fas fa-chevron-left"></i></button><button id="nextMonthBtn" class="border border-gray-300 bg-white px-3 py-2 rounded-md"><i class="fas fa-chevron-right"></i></button><span id="calendar-month-year" class="font-medium self-center ml-4"></span></div></div>
+                     <div class="grid grid-cols-7 gap-2 mb-2 text-center text-sm font-medium text-gray-600"><div>Lun</div><div>Mar</div><div>Mié</div><div>Jue</div><div>Vie</div><div>Sáb</div><div>Dom</div></div>
+                     <div id="calendar-grid" class="grid grid-cols-7 gap-2 mb-6"><!-- Días del calendario load here --></div>
+                     <div id="daily-details-section" class="mt-6 p-4 border rounded-lg bg-gray-50 hidden"><!-- Detalles del día y checklist --></div>
+                </div>
+
+                <!-- Programs Tab -->
+                <div id="programs" class="tab-content">
+                    <div class="flex justify-between items-center mb-6"><h1 class="text-2xl font-bold">Programas de Entrenamiento</h1><button id="addProgramBtn" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"><i class="fas fa-plus mr-2"></i>Nuevo Programa</button></div>
+                    <div id="programs-list-container" class="grid grid-cols-1 md:grid-cols-2 gap-4"><!-- Lista de programas load here --></div>
+                    <div class="mt-8"><h2 class="text-xl font-semibold mb-4">Plantillas Populares</h2><div id="program-templates-container" class="grid grid-cols-1 md:grid-cols-3 gap-4"><!-- Plantillas load here --></div></div>
+                </div>
+
+                <!-- Analytics Tab -->
+                <div id="analytics" class="tab-content">
+                    <div class="flex justify-between items-center mb-6"><h1 class="text-2xl font-bold">Análisis de Rendimiento</h1><div class="flex space-x-2"><select id="analyticsPeriodSelect" class="border border-gray-300 rounded-md px-3 py-2"><option value="30">Últimos 30 días</option><option value="90">Últimos 90 días</option><option value="365">Este año</option><option value="all">Todo el tiempo</option></select><button id="exportAnalyticsBtn" class="bg-blue-600 text-white px-4 py-2 rounded-md"><i class="fas fa-download mr-2"></i>Exportar</button></div></div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6"><div class="bg-white rounded-lg border border-gray-200 p-4"><h2 class="text-lg font-semibold mb-4">Progreso por Deporte</h2><div class="chart-container"><canvas id="sportsProgressChart"></canvas></div></div><div class="bg-white rounded-lg border border-gray-200 p-4"><h2 class="text-lg font-semibold mb-4">Métricas Específicas (<span id="analyticsSportFocus"></span>)</h2><div class="chart-container"><canvas id="specificMetricsChart"></canvas></div></div></div>
+                    <div class="bg-white rounded-lg border border-gray-200 p-4 mb-6"><div class="flex justify-between items-center mb-4"><h2 class="text-lg font-semibold">Evolución de Rendimiento</h2><div><select id="performanceMetricSelect" class="border border-gray-300 rounded-md px-3 py-1 text-sm"><!-- Métricas load here --></select></div></div><div class="chart-container" style="height: 250px;"><canvas id="performanceChart"></canvas></div></div>
+                    <div class="bg-white rounded-lg border border-gray-200 p-4 mb-6"><h2 class="text-lg font-semibold mb-4">Análisis Comparativo entre Usuarios</h2><div class="overflow-x-auto"><table class="min-w-full divide-y divide-gray-200"><thead><!-- Encabezados --></thead><tbody id="userComparisonTableBody" class="bg-white divide-y divide-gray-200"><!-- Filas de usuarios --></tbody></table></div></div>
+                </div>
+
+                <!-- Sports Tab -->
+                <div id="sports" class="tab-content">
+                    <div class="flex justify-between items-center mb-6"><h1 class="text-2xl font-bold">Gestión de Deportes</h1><button id="addSportBtn" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"><i class="fas fa-plus mr-2"></i>Añadir Deporte</button></div>
+                    <div id="sports-list-container" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6"><!-- Lista de deportes load here --></div>
+                    <div id="sport-config-section" class="mb-6 hidden"><!-- Sección de configuración específica de deporte --></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================== MODALES ===================== -->
+    <!-- Todos los modales definidos en el HTML anterior van aquí -->
+    <!-- ... (Modal Añadir/Editar Ejercicio) ... -->
+    <div id="exerciseModal" class="modal"> /* Contenido del modal de ejercicio */ </div>
+    <!-- ... (Modal Añadir/Editar Programa) ... -->
+    <div id="programModal" class="modal"> /* Contenido del modal de programa */ </div>
+    <!-- ... (Modal Añadir/Editar Sesión) ... -->
+    <div id="sessionModal" class="modal"> /* Contenido del modal de sesión */ </div>
+    <!-- ... (Modal Añadir Usuario) ... -->
+    <div id="userModal" class="modal"> /* Contenido del modal de usuario */ </div>
+    <!-- ... (Modal Añadir/Configurar Deporte) ... -->
+    <div id="sportModal" class="modal"> /* Contenido del modal de deporte */ </div>
+
+    <!-- ===================== SCRIPTS ===================== -->
+    <!-- Incluir los archivos JS en el orden correcto (dependencias primero si las hay) -->
+    <script src="js/api.js"></script>       <!-- Manejo de datos -->
+    <script src="js/ui.js"></script>        <!-- Manejo de UI (tabs, modales, etc.) -->
+    <script src="js/charts.js"></script>    <!-- Manejo de gráficos -->
+    <script src="js/app.js"></script>       <!-- Lógica principal, inicialización -->
+
+</body>
+</html>
